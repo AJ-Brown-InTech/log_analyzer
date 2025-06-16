@@ -13,13 +13,22 @@ defmodule LogAnalyzer do
   end
 
   defp stream_reader(stream) do
-    Enum.each(stream, fn line ->
-        IO.puts("line -> #{String.trim(line)}")
+    {valids, errors} =
+
+    stream
+    |> Stream.map(&String.trim/1)
+    |> Enum.reduce({0,0}, fn line, {valid_count, error_count} ->
+          if line == "" do
+            {valid_count, error_count + 1}
+          else
+            {valid_count + 1, error_count}
+          end
     end)
-    File.close(stream)  
+    IO.puts("Valid count #{valids}")    
+    IO.puts("Error count #{errors}")    
+
   end
 
-  # TODO: add metrics 
 
   def handle() do
     case read_file("test.txt") do
@@ -28,7 +37,6 @@ defmodule LogAnalyzer do
       {:error, reason} ->
         IO.puts("Failed to read file: #{reason}") 
     end
-    
   end
   
 end
