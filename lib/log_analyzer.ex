@@ -13,22 +13,32 @@ defmodule LogAnalyzer do
   end
 
   defp stream_reader(stream) do
-    {valids, errors} =
-
     stream
     |> Stream.map(&String.trim/1)
-    |> Enum.reduce({0,0}, fn line, {valid_count, error_count} ->
-          if line == "" do
-            {valid_count, error_count + 1}
-          else
-            {valid_count + 1, error_count}
-          end
-    end)
-    IO.puts("Valid count #{valids}")    
-    IO.puts("Error count #{errors}")    
-
+    |> stream_counter()
   end
 
+  defp stream_counter(stream) do
+    Enum.reduce(stream, {0,0,MapSet.new()}, fn line, {valid_count, error_count, uniques} ->
+      cond do
+      line == "" ->
+        {valid_count, error_count + 1, uniques}
+      true ->
+        {valid_count + 1, error_count, MapSet.put(uniques, line)}
+      end               
+    end)
+      |> print_results()
+  end
+
+defp print_results({valid, error, uniques}) do
+  IO.puts("Valid lines: #{valid}")
+  IO.puts("Error (empty) lines: #{error}")
+  IO.puts("Unique non-empty lines: #{MapSet.size(uniques)}")  
+  IO.puts("\n--- Unique Lines ---")
+  uniques
+    |> Enum.sort()
+    |> Enum.each(&IO.puts("- #{&1}"))
+end  
 
   def handle() do
     case read_file("test.txt") do
@@ -38,7 +48,6 @@ defmodule LogAnalyzer do
         IO.puts("Failed to read file: #{reason}") 
     end
   end
-  
 end
 
- LogAnalyzer.handle()
+LogAnalyzer.handle()
